@@ -27,10 +27,9 @@ Estimates heart rate and respiratory rate from a face video using computer visio
 
 <br/>
 
-<!-- Replace demo.gif with your actual GIF/screenshot -->
-<img src="demo.gif" alt="rPPG Demo" width="780" style="border-radius: 12px;" />
+![rPPG Demo](demo.gif)
 
-<br/><br/>
+<br/>
 
 </div>
 
@@ -38,22 +37,24 @@ Estimates heart rate and respiratory rate from a face video using computer visio
 
 ## What Is rPPG?
 
-Remote photoplethysmography (rPPG) detects subtle colour changes in skin caused by blood flow — invisible to the eye, but measurable through a camera. Every heartbeat pushes blood through your face, slightly changing the light reflected off it. This system captures those micro-variations from the **green channel** of your camera feed and extracts physiological signals using signal processing.
+Remote photoplethysmography (rPPG) detects subtle colour changes in skin caused by blood flow — invisible to the naked eye, but measurable through any standard camera. Every heartbeat pushes blood through your face, slightly altering the light reflected off your skin.
 
-No wearables. No contact. Just your face and a camera.
+This system captures those micro-variations from the **green channel** of your camera feed and extracts physiological signals using band-limited signal processing and FFT frequency analysis.
+
+> No wearables. No contact. Just your face and a camera.
 
 ---
 
 ## Features
 
-| | |
+| Feature | Description |
 |---|---|
-| ❤️ **Heart Rate** | BPM estimation per 5-second chunk |
-| 🌬️ **Respiratory Rate** | Breaths/min extracted from the same signal |
-| ⚡ **Near Real-Time** | 17–21× faster than real-time processing |
+| ❤️ **Heart Rate** | BPM estimation per 5-second sliding window |
+| 🌬️ **Respiratory Rate** | Breaths/min extracted from the same rPPG signal |
+| ⚡ **Near Real-Time** | Processes 17–21× faster than video duration |
 | 📊 **Live Dashboard** | Interactive Streamlit + Plotly visualisation |
 | 🎯 **Signal Quality Score** | Per-chunk reliability indicator |
-| 🧍 **Optimised Face Tracking** | Detection runs every 10 frames to cut overhead |
+| 🧍 **Optimised Face Tracking** | Haarcascade runs every 10 frames to cut overhead |
 
 ---
 
@@ -96,7 +97,7 @@ No wearables. No contact. Just your face and a camera.
 Haarcascade classifier locates the face ROI. Detection runs every 10 frames — the bounding box is reused in between for speed.
 
 **2 · Signal Extraction**
-Mean RGB values are sampled from the face region each frame. The green channel carries the strongest rPPG signal (peak absorption by haemoglobin).
+Mean RGB values are sampled from the face region each frame. The green channel carries the strongest rPPG signal due to peak absorption by haemoglobin.
 
 **3 · Signal Processing**
 The raw trace is detrended to remove drift, resampled to a uniform time grid, then passed through a zero-phase Butterworth bandpass filter — separately tuned for heart rate and respiratory rate.
@@ -125,7 +126,7 @@ rppg-heart-rate-monitor/
 │
 ├── app.py                  # Streamlit UI & dashboard
 ├── rppg_pipeline.py        # Core signal processing logic
-├── demo.gif                # Demo animation (README preview)
+├── demo.gif                # Demo animation
 ├── requirements.txt        # Python dependencies
 └── README.md
 ```
@@ -137,7 +138,7 @@ rppg-heart-rate-monitor/
 ### Prerequisites
 
 - Python 3.8+
-- A face video (MP4, AVI, etc.) or webcam
+- A face video (MP4, AVI, MOV, etc.)
 
 ### Installation
 
@@ -153,18 +154,18 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Then open `http://localhost:8501` in your browser, upload a video, and watch the dashboard populate in real time.
+Open `http://localhost:8501` in your browser, upload a face video, and watch the dashboard populate in real time.
 
 ---
 
-## Output & Dashboard
+## Dashboard
 
-The dashboard displays:
+The live dashboard displays:
 
-- **Live BPM graph** — heart rate across each 5-second chunk
-- **Respiratory rate trend** — breaths/min over time  
-- **Signal quality bar chart** — per-chunk reliability score
-- **Overall median BPM** — aggregate summary
+- **BPM graph** — heart rate across each 5-second chunk
+- **Respiratory rate trend** — breaths/min over time
+- **Signal quality chart** — per-chunk reliability score
+- **Median BPM** — aggregate summary across the full video
 - **Performance panel** — chunk latency and real-time factor
 
 ---
@@ -175,16 +176,16 @@ The dashboard displays:
 |---|---|
 | Chunk latency | ~250 – 400 ms |
 | Real-time factor | ~17 – 21× |
-| Optimal conditions | Stable lighting, frontal face |
+| Optimal conditions | Stable lighting, frontal face, minimal motion |
 
 ---
 
 ## Limitations
 
-- Sensitive to uneven or changing lighting
+- Sensitive to uneven or rapidly changing lighting
 - Requires a frontal, clearly visible face
-- Motion (head movement, talking) reduces signal quality
-- Not validated for clinical or medical use
+- Head movement and talking reduce signal quality
+- **Not validated for clinical or medical use**
 
 ---
 
@@ -199,30 +200,10 @@ The dashboard displays:
 
 ---
 
-## Local GIF Conversion (for GitHub preview)
-
-GitHub does not autoplay `.mp4` files in READMEs. Convert your demo to GIF first:
-
-| Platform | Tool |
-|---|---|
-| macOS | [Kap](https://getkap.co/) |
-| Windows | [ScreenToGif](https://www.screentogif.com/) |
-| Any | `ffmpeg -i demo.mp4 -vf "fps=15,scale=780:-1" demo.gif` |
-
-Then commit:
-
-```bash
-git add demo.gif
-git commit -m "Add demo GIF for README preview"
-git push
-```
-
----
-
 ## Author
 
-**Utkarsh Karambhe**  
-B.Tech CSE (Data Science) · Nagpur, India  
+**Utkarsh Karambhe**
+B.Tech CSE (Data Science) · Nagpur, India
 [GitHub](https://github.com/Utkarsh-Karambhe)
 
 ---
