@@ -222,6 +222,5 @@ If this project helped you, consider giving it a ⭐ — it genuinely helps with
 
 <br/>
 
-*Built with signal processing, caffeine, and curiosity about what a camera can silently know about you.*
 
 </div>
