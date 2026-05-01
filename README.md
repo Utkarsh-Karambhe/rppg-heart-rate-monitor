@@ -2,63 +2,60 @@
 
 <br/>
 
-```
-██████╗ ██████╗ ██████╗  ██████╗
-██╔══██╗██╔══██╗██╔══██╗██╔════╝
-██████╔╝██████╔╝██████╔╝██║  ███╗
-██╔══██╗██╔═══╝ ██╔═══╝ ██║   ██║
-██║  ██║██║     ██║     ╚██████╔╝
-╚═╝  ╚═╝╚═╝     ╚═╝      ╚═════╝
-```
+<img src="https://em-content.zobj.net/source/apple/391/anatomical-heart_1fac0.png" width="80" alt="heart" />
+
+<br/>
 
 # Remote Photoplethysmography · Heart Rate Monitor
 
 **Measure your heart — no contact required.**
 
-Estimates heart rate and respiratory rate from a face video using computer vision and signal processing — running 17–21× faster than real time.
+Estimates heart rate and respiratory rate from a face video using<br/>
+computer vision and signal processing — running **17–21× faster** than real time.
 
 <br/>
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=flat-square&logo=opencv&logoColor=white)](https://opencv.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
-[![SciPy](https://img.shields.io/badge/SciPy-Signal%20Processing-8CAAE6?style=flat-square&logo=scipy&logoColor=white)](https://scipy.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![SciPy](https://img.shields.io/badge/SciPy-Signal_Processing-8CAAE6?style=for-the-badge&logo=scipy&logoColor=white)](https://scipy.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
 <br/>
 
-![rPPG Demo](demo.gif)
+<img src="demo.gif" alt="rPPG Demo" width="760" style="border-radius: 12px;" />
 
-<br/>
+<br/><br/>
 
 </div>
 
 ---
 
-## What Is rPPG?
+## 🧬 What Is rPPG?
 
 Remote photoplethysmography (rPPG) detects subtle colour changes in skin caused by blood flow — invisible to the naked eye, but measurable through any standard camera. Every heartbeat pushes blood through your face, slightly altering the light reflected off your skin.
 
 This system captures those micro-variations from the **green channel** of your camera feed and extracts physiological signals using band-limited signal processing and FFT frequency analysis.
 
+> [!NOTE]
 > No wearables. No contact. Just your face and a camera.
 
 ---
 
-## Features
+## ✨ Features
 
-| Feature | Description |
-|---|---|
-| ❤️ **Heart Rate** | BPM estimation per 5-second sliding window |
-| 🌬️ **Respiratory Rate** | Breaths/min extracted from the same rPPG signal |
-| ⚡ **Near Real-Time** | Processes 17–21× faster than video duration |
-| 📊 **Live Dashboard** | Interactive Streamlit + Plotly visualisation |
-| 🎯 **Signal Quality Score** | Per-chunk reliability indicator |
-| 🧍 **Optimised Face Tracking** | Haarcascade runs every 10 frames to cut overhead |
+| | Feature | Description |
+|:---:|---|---|
+| ❤️ | **Heart Rate** | BPM estimation per 5-second sliding window |
+| 🌬️ | **Respiratory Rate** | Breaths/min extracted from the same rPPG signal |
+| ⚡ | **Near Real-Time** | Processes 17–21× faster than video duration |
+| 📊 | **Live Dashboard** | Interactive Streamlit + Plotly visualisation |
+| 🎯 | **Signal Quality Score** | Per-chunk reliability indicator |
+| 🧍 | **Optimised Face Tracking** | Haarcascade runs every 10 frames to cut overhead |
 
 ---
 
-## How It Works
+## 🔬 How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -91,7 +88,10 @@ This system captures those micro-variations from the **green channel** of your c
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Step-by-Step
+<details>
+<summary><b>📖 Step-by-Step Breakdown</b></summary>
+
+<br/>
 
 **1 · Face Detection**
 Haarcascade classifier locates the face ROI. Detection runs every 10 frames — the bounding box is reused in between for speed.
@@ -105,9 +105,11 @@ The raw trace is detrended to remove drift, resampled to a uniform time grid, th
 **4 · Frequency Analysis**
 FFT is applied on each 5-second window. The dominant peak frequency maps directly to BPM or breaths/min.
 
+</details>
+
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Tools |
 |---|---|
@@ -119,7 +121,7 @@ FFT is applied on each 5-second window. The dominant peak frequency maps directl
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 rppg-heart-rate-monitor/
@@ -128,17 +130,18 @@ rppg-heart-rate-monitor/
 ├── rppg_pipeline.py        # Core signal processing logic
 ├── demo.gif                # Demo animation
 ├── requirements.txt        # Python dependencies
+├── LICENSE                 # MIT license
 └── README.md
 ```
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Python 3.8+
-- A face video (MP4, AVI, MOV, etc.)
+- A face video (MP4, MOV, AVI, etc.)
 
 ### Installation
 
@@ -154,23 +157,24 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Open `http://localhost:8501` in your browser, upload a face video, and watch the dashboard populate in real time.
+Open [`http://localhost:8501`](http://localhost:8501) in your browser, upload a face video, and watch the dashboard populate in real time.
 
 ---
 
-## Dashboard
+## 📊 Dashboard
 
 The live dashboard displays:
 
-- **BPM graph** — heart rate across each 5-second chunk
-- **Respiratory rate trend** — breaths/min over time
-- **Signal quality chart** — per-chunk reliability score
-- **Median BPM** — aggregate summary across the full video
-- **Performance panel** — chunk latency and real-time factor
+- 📈 **BPM graph** — heart rate across each 5-second chunk
+- 🌬️ **Respiratory rate trend** — breaths/min over time
+- 🎯 **Signal quality chart** — per-chunk reliability score
+- ❤️ **Median BPM** — aggregate summary across the full video
+- ⚡ **Performance panel** — chunk latency and real-time factor
+- 📥 **CSV export** — download all chunk-level data
 
 ---
 
-## Performance
+## ⚡ Performance
 
 | Metric | Value |
 |---|---|
@@ -178,18 +182,22 @@ The live dashboard displays:
 | Real-time factor | ~17 – 21× |
 | Optimal conditions | Stable lighting, frontal face, minimal motion |
 
+> Benchmarked on MacBook Air M2. Performance may vary by hardware.
+
 ---
 
-## Limitations
+## ⚠️ Limitations
+
+> [!WARNING]
+> This tool is **not validated for clinical or medical use**. Do not use it for health decisions.
 
 - Sensitive to uneven or rapidly changing lighting
 - Requires a frontal, clearly visible face
 - Head movement and talking reduce signal quality
-- **Not validated for clinical or medical use**
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [ ] Live webcam streaming support
 - [ ] Deep learning–based face tracking (MediaPipe / dlib)
@@ -200,7 +208,7 @@ The live dashboard displays:
 
 ---
 
-## Author
+## 🙋 Author
 
 **Utkarsh Karambhe**
 B.Tech CSE (Data Science) · Nagpur, India

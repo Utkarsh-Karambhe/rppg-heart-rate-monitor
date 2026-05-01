@@ -4,8 +4,8 @@ __pycache__/
 *.pyo
 *.pyd
 .env
+.DS_Store
 *.mp4
 *.mov
-temp_video.mp4
-
-!demo.mp4
+temp_video.*
+demo_original.gif
