@@ -132,7 +132,6 @@ rppg-heart-rate-monitor/
 ├── Dockerfile              # Container image for the Streamlit app
 ├── docker-compose.yml      # App + optional nginx reverse proxy
 ├── deploy/nginx/           # nginx reverse-proxy template
-├── packages.txt            # Debian packages for Streamlit Community Cloud
 ├── demo.gif                # Demo animation
 ├── requirements.txt        # Python dependencies
 ├── LICENSE                 # MIT license
@@ -200,11 +199,11 @@ Useful environment variables:
 
 ## ☁️ Streamlit Community Cloud
 
-Use `app.py` as the entrypoint and keep `requirements.txt` plus `packages.txt` in the repo root.
-In the deployment UI, choose Python 3.12 or 3.11 from Advanced settings.
+Use `app.py` as the entrypoint and keep `requirements.txt` in the repo root.
+Community Cloud defaults to Python 3.12; Python 3.11 also works if selected from Advanced settings.
 
 This repo pins OpenCV, NumPy, SciPy, pandas, Plotly, and Streamlit to versions that resolve cleanly on Linux deploy images.
-The `packages.txt` file installs the Debian libraries needed by OpenCV/video decoding.
+Do not add `packages.txt` for this app on Community Cloud unless a new native dependency is introduced; the current video path uses the `opencv-python-headless` wheel and avoids the apt dependency conflicts shown by `ffmpeg`/`libglib`.
 
 ---
 
