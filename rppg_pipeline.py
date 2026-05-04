@@ -92,6 +92,8 @@ def bandpass_filter(signal, times, low_hz, high_hz):
 
     t_uniform = np.linspace(times[0], times[-1], n)
     x = np.interp(t_uniform, times, signal)
+    if not np.all(np.isfinite(x)):
+        return None, None
     x = detrend(x)
 
     nyq  = 0.5 * fs
@@ -101,7 +103,14 @@ def bandpass_filter(signal, times, low_hz, high_hz):
         return None, None
 
     b, a = butter(3, [low, high], btype="band")
-    x_filt = filtfilt(b, a, x)
+    padlen = 3 * max(len(a), len(b))
+    if len(x) <= padlen:
+        return None, None
+
+    try:
+        x_filt = filtfilt(b, a, x)
+    except ValueError:
+        return None, None
     return x_filt, fs
 
 
@@ -199,6 +208,8 @@ def run_pipeline(video_path: str):
     face_cascade = cv2.CascadeClassifier(
         cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     )
+    if face_cascade.empty():
+        raise RuntimeError("OpenCV could not load haarcascade_frontalface_default.xml")
 
     chunk_results: List[ChunkResult] = []
     chunk_frames, chunk_times = [], []

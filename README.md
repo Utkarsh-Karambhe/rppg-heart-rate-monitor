@@ -128,6 +128,11 @@ rppg-heart-rate-monitor/
 │
 ├── app.py                  # Streamlit UI & dashboard
 ├── rppg_pipeline.py        # Core signal processing logic
+├── .streamlit/config.toml  # Streamlit server settings for deploys
+├── Dockerfile              # Container image for the Streamlit app
+├── docker-compose.yml      # App + optional nginx reverse proxy
+├── deploy/nginx/           # nginx reverse-proxy template
+├── packages.txt            # Debian packages for Streamlit Community Cloud
 ├── demo.gif                # Demo animation
 ├── requirements.txt        # Python dependencies
 ├── LICENSE                 # MIT license
@@ -140,8 +145,9 @@ rppg-heart-rate-monitor/
 
 ### Prerequisites
 
-- Python 3.8+
-- A face video (MP4, MOV, AVI, etc.)
+- Python 3.11 or 3.12 recommended
+- A face video (MP4 or MOV for the Streamlit uploader)
+- Docker, if you want containerized deployment
 
 ### Installation
 
@@ -158,6 +164,47 @@ streamlit run app.py
 ```
 
 Open [`http://localhost:8501`](http://localhost:8501) in your browser, upload a face video, and watch the dashboard populate in real time.
+
+---
+
+## 🐳 Docker Deployment
+
+Build and run only the Streamlit app:
+
+```bash
+docker compose up --build app
+```
+
+Open [`http://localhost:8501`](http://localhost:8501).
+The direct Streamlit port is bound to `127.0.0.1`; use nginx for public/domain traffic.
+
+Run the app behind nginx:
+
+```bash
+NGINX_HOST=your-domain.com docker compose up --build -d
+```
+
+Point your domain's DNS `A` record to the server IP, then open `http://your-domain.com`.
+For HTTPS, terminate TLS at your cloud load balancer, Cloudflare, or a host-level Certbot setup that forwards traffic to nginx on port 80.
+
+Useful environment variables:
+
+| Variable | Default | Purpose |
+|---|---:|---|
+| `APP_PORT` | `8501` | Direct Streamlit host port |
+| `NGINX_HTTP_PORT` | `80` | Public nginx HTTP port |
+| `NGINX_HOST` | `localhost` | nginx `server_name` |
+| `CLIENT_MAX_BODY_SIZE` | `500m` | Max upload size accepted by nginx |
+
+---
+
+## ☁️ Streamlit Community Cloud
+
+Use `app.py` as the entrypoint and keep `requirements.txt` plus `packages.txt` in the repo root.
+In the deployment UI, choose Python 3.12 or 3.11 from Advanced settings.
+
+This repo pins OpenCV, NumPy, SciPy, pandas, Plotly, and Streamlit to versions that resolve cleanly on Linux deploy images.
+The `packages.txt` file installs the Debian libraries needed by OpenCV/video decoding.
 
 ---
 

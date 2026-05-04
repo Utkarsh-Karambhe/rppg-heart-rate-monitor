@@ -5,6 +5,8 @@ import pandas as pd
 import cv2
 import numpy as np
 import time as _time
+import tempfile
+from pathlib import Path
 from rppg_pipeline import process_chunk, aggregate_overall
 
 st.set_page_config(page_title="rPPG Heart Rate Monitor", layout="centered")
@@ -393,107 +395,135 @@ with st.sidebar:
 uploaded = st.file_uploader("Upload face video (.mp4 / .mov)", type=["mp4", "mov"])
 
 if uploaded:
-    with open("temp_video.mp4", "wb") as f:
-        f.write(uploaded.read())
+    video_bytes = uploaded.getvalue()
 
-    st.video("temp_video.mp4")
+    st.video(video_bytes)
     st.divider()
 
     if st.button("▶ Run rPPG Analysis", type="primary", use_container_width=True):
-
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        suffix = Path(uploaded.name).suffix.lower() or ".mp4"
+        tmp_video = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=suffix,
+            prefix="rppg_upload_",
         )
-        cap          = cv2.VideoCapture("temp_video.mp4")
-        fps          = cap.get(cv2.CAP_PROP_FPS) or 30.0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration_s   = total_frames / fps
+        video_path = Path(tmp_video.name)
+        tmp_video.write(video_bytes)
+        tmp_video.close()
 
-        st.info(f"📹 Video: {duration_s:.1f}s · {fps:.0f} fps · {total_frames} frames")
+        cap = None
+        try:
+            face_cascade = cv2.CascadeClassifier(
+                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+            )
+            if face_cascade.empty():
+                st.error("OpenCV could not load the face detection model.")
+                st.stop()
 
-        chunk_frames, chunk_times, chunk_results = [], [], []
-        frame_idx, chunk_index = 0, 0
-        first_t = None
+            cap = cv2.VideoCapture(str(video_path))
+            if not cap.isOpened():
+                st.error("OpenCV could not read this video. Try a standard H.264 MP4 file.")
+                st.stop()
 
-        progress = st.progress(0, text="Starting...")
-        chart_ph = st.empty()
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            duration_s = total_frames / fps if total_frames > 0 else 0.0
+            total_label = str(total_frames) if total_frames > 0 else "unknown"
 
-        wall_start = _time.perf_counter()
+            st.info(f"📹 Video: {duration_s:.1f}s · {fps:.0f} fps · {total_label} frames")
 
-        # ── Frame loop ────────────────────────────────────────────
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                if chunk_times and (chunk_times[-1] - chunk_times[0]) >= 3.0:
+            chunk_frames, chunk_times, chunk_results = [], [], []
+            frame_idx, chunk_index = 0, 0
+            first_t = None
+
+            progress = st.progress(0, text="Starting...")
+            chart_ph = st.empty()
+
+            wall_start = _time.perf_counter()
+
+            # ── Frame loop ────────────────────────────────────────────
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    if chunk_times and (chunk_times[-1] - chunk_times[0]) >= 3.0:
+                        r = process_chunk(chunk_index, chunk_frames, chunk_times, face_cascade)
+                        chunk_results.append(r)
+                    break
+
+                t_video = frame_idx / fps
+                if first_t is None:
+                    first_t = t_video
+                t_rel = t_video - first_t
+
+                chunk_frames.append(frame)
+                chunk_times.append(t_rel)
+                frame_idx += 1
+
+                progress_value = min(frame_idx / total_frames, 1.0) if total_frames > 0 else 0.0
+                progress.progress(
+                    progress_value,
+                    text=f"Processing frames… {frame_idx}/{total_label}  "
+                         f"({len(chunk_results)} chunks done)"
+                )
+
+                if chunk_times[-1] - chunk_times[0] >= 5.0:
                     r = process_chunk(chunk_index, chunk_frames, chunk_times, face_cascade)
                     chunk_results.append(r)
-                break
+                    chunk_index += 1
+                    chunk_frames, chunk_times = [], []
 
-            t_video = frame_idx / fps
-            if first_t is None:
-                first_t = t_video
-            t_rel = t_video - first_t
+                    # ── Update live line chart after every chunk ──────
+                    labels = [f"{c.start_time:.0f}s" for c in chunk_results]
+                    bpms   = [c.bpm      if c.bpm      is not None else None for c in chunk_results]
+                    rrs    = [c.resp_bpm if c.resp_bpm is not None else None for c in chunk_results]
 
-            chunk_frames.append(frame)
-            chunk_times.append(t_rel)
-            frame_idx += 1
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=labels, y=bpms,
+                        mode="lines+markers",
+                        name="Heart Rate (BPM)",
+                        line=dict(color="#ef4444", width=2.5, shape="spline"),
+                        marker=dict(size=8, color="#ef4444",
+                                    line=dict(width=2, color="rgba(239,68,68,0.3)"))
+                    ))
+                    fig.add_trace(go.Scatter(
+                        x=labels, y=rrs,
+                        mode="lines+markers",
+                        name="Resp. Rate (br/min)",
+                        line=dict(color="#3b82f6", width=2, dash="dot", shape="spline"),
+                        marker=dict(size=7, color="#3b82f6",
+                                    line=dict(width=2, color="rgba(59,130,246,0.3)"))
+                    ))
+                    fig.update_layout(
+                        title=dict(text="Live Biomarker Estimates — 5-second chunks",
+                                   font=dict(size=14, color="#94a3b8")),
+                        xaxis_title="Chunk start time",
+                        yaxis_title="Value",
+                        height=380,
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                                    xanchor="right", x=1, font=dict(color="#94a3b8")),
+                        margin=dict(t=60, b=40),
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        font=dict(color="#94a3b8", family="Inter, sans-serif"),
+                        xaxis=dict(gridcolor="rgba(255,255,255,0.06)",
+                                   linecolor="rgba(255,255,255,0.1)"),
+                        yaxis=dict(gridcolor="rgba(255,255,255,0.06)",
+                                   linecolor="rgba(255,255,255,0.1)"),
+                    )
+                    chart_ph.plotly_chart(fig, use_container_width=True)
 
-            progress.progress(
-                min(frame_idx / total_frames, 1.0),
-                text=f"Processing frames… {frame_idx}/{total_frames}  "
-                     f"({len(chunk_results)} chunks done)"
-            )
+            if frame_idx == 0:
+                st.error("OpenCV could not decode any frames from this video.")
+                st.stop()
 
-            if chunk_times[-1] - chunk_times[0] >= 5.0:
-                r = process_chunk(chunk_index, chunk_frames, chunk_times, face_cascade)
-                chunk_results.append(r)
-                chunk_index += 1
-                chunk_frames, chunk_times = [], []
-
-                # ── Update live line chart after every chunk ──────
-                labels = [f"{c.start_time:.0f}s" for c in chunk_results]
-                bpms   = [c.bpm      if c.bpm      is not None else None for c in chunk_results]
-                rrs    = [c.resp_bpm if c.resp_bpm is not None else None for c in chunk_results]
-
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(
-                    x=labels, y=bpms,
-                    mode="lines+markers",
-                    name="Heart Rate (BPM)",
-                    line=dict(color="#ef4444", width=2.5, shape="spline"),
-                    marker=dict(size=8, color="#ef4444",
-                                line=dict(width=2, color="rgba(239,68,68,0.3)"))
-                ))
-                fig.add_trace(go.Scatter(
-                    x=labels, y=rrs,
-                    mode="lines+markers",
-                    name="Resp. Rate (br/min)",
-                    line=dict(color="#3b82f6", width=2, dash="dot", shape="spline"),
-                    marker=dict(size=7, color="#3b82f6",
-                                line=dict(width=2, color="rgba(59,130,246,0.3)"))
-                ))
-                fig.update_layout(
-                    title=dict(text="Live Biomarker Estimates — 5-second chunks",
-                               font=dict(size=14, color="#94a3b8")),
-                    xaxis_title="Chunk start time",
-                    yaxis_title="Value",
-                    height=380,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02,
-                                xanchor="right", x=1, font=dict(color="#94a3b8")),
-                    margin=dict(t=60, b=40),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#94a3b8", family="Inter, sans-serif"),
-                    xaxis=dict(gridcolor="rgba(255,255,255,0.06)",
-                               linecolor="rgba(255,255,255,0.1)"),
-                    yaxis=dict(gridcolor="rgba(255,255,255,0.06)",
-                               linecolor="rgba(255,255,255,0.1)"),
-                )
-                chart_ph.plotly_chart(fig, use_container_width=True)
-
-        cap.release()
-        wall_end  = _time.perf_counter()
-        wall_time = wall_end - wall_start
+            cap.release()
+            wall_end  = _time.perf_counter()
+            wall_time = wall_end - wall_start
+        finally:
+            if cap is not None and cap.isOpened():
+                cap.release()
+            video_path.unlink(missing_ok=True)
 
         progress.progress(1.0, text="✅ Done!")
 
